@@ -103,7 +103,7 @@ function App() {
         )}
 
         {/* 상태별 컴포넌트 */}
-        <div className="w-full max-w-xl flex flex-col items-center">
+        <div className={`w-full flex flex-col items-center ${status === 'answering' ? 'max-w-4xl' : 'max-w-xl'}`}>
 
           {status === 'idle' && <UploadZone onFileSelect={handleFileSelect} />}
 
