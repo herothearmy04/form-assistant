@@ -71,7 +71,8 @@ Return your analysis ONLY as the JSON structure below. Do not include any other 
       "type": "text | date | number | checkbox | select | signature",
       "required": true,
       "placeholder": "Example input in English ONLY (optional)",
-      "options": ["Option 1 in English", "Option 2 in English"]
+      "options": ["Option 1 in English", "Option 2 in English"],
+      "description": "Full verbatim text of the disclaimer, notice, or consent paragraph from the PDF — include ONLY when such a paragraph exists in the source document for this field"
     }
   ]
 }
@@ -94,6 +95,7 @@ MANDATORY FIELD INCLUSION RULES — NEVER skip these:
    - Frame as a Yes/No question, e.g.: "Do you agree to the disclaimer and consent to the terms stated above?"
    - NEVER skip a checkbox, radio button, or consent/disclaimer field — even if it appears to be just a legal notice.
    - If the AcroForm field list marks any field as type "checkbox" or "radio", you MUST include it.
+   - DESCRIPTION RULE: If the PDF contains a paragraph of disclaimer, consent, notice, or advisory text that the user must read before answering this field, copy that paragraph VERBATIM into the "description" property. Translate it to English if the source is non-English. Do NOT truncate or summarize — include the full text. If no such paragraph exists, omit the "description" key entirely.
 
 4. TEXT fields → type "text"
 5. NUMBER fields → type "number"
@@ -214,7 +216,7 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
     // 3) Claude API call — prompt caching + adaptive thinking + streaming
     const stream = await client.messages.stream({
       model: 'claude-opus-4-8',
-      max_tokens: 4096,
+      max_tokens: 16000,
       thinking: { type: 'adaptive' },
       system: [
         {
