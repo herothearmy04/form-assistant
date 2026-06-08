@@ -7,9 +7,14 @@ import fontkit from '@pdf-lib/fontkit'
 import { PDFParse } from 'pdf-parse'
 import Anthropic from '@anthropic-ai/sdk'
 import { readFile } from 'fs/promises'
+import { fileURLToPath } from 'url'
+import { join, dirname } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -425,6 +430,13 @@ app.post('/api/fill', upload.single('pdf'), async (req, res) => {
   res.set('Content-Disposition', `attachment; filename="${filename}"; filename*=UTF-8''${filename}`)
   res.send(Buffer.from(pdfBytes))
 })
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(join(__dirname, 'dist')))
+  app.get('*', (req, res) => {
+    res.sendFile(join(__dirname, 'dist', 'index.html'))
+  })
+}
 
 app.listen(PORT, (err) => {
   if (err) {
