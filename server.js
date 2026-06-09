@@ -24,6 +24,7 @@ const upload = multer({
   },
 })
 
+console.log("서버가 인식한 API 키 뒷자리:", process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.slice(-4) : "없음")
 const client = new Anthropic()
 
 // Font cache for text rendering
