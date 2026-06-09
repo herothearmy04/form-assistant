@@ -24,7 +24,6 @@ const upload = multer({
   },
 })
 
-console.log("서버가 인식한 API 키 뒷자리:", process.env.ANTHROPIC_API_KEY ? process.env.ANTHROPIC_API_KEY.slice(-4) : "없음")
 const client = new Anthropic()
 
 // Font cache for text rendering
@@ -262,13 +261,13 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
       return res.status(500).json({ error: 'The AI returned an invalid response. Please try again.' })
     }
     if (err instanceof Anthropic.AuthenticationError) {
-      return res.status(500).json({ error: 'Invalid API key. Please check your .env file.' })
+      return res.status(401).json({ error: err.message })
     }
     if (err instanceof Anthropic.RateLimitError) {
-      return res.status(429).json({ error: 'API rate limit exceeded. Please wait a moment and try again.' })
+      return res.status(429).json({ error: err.message })
     }
 
-    res.status(500).json({ error: 'An error occurred during analysis. Please try again.' })
+    res.status(500).json({ error: err.message || 'An error occurred during analysis. Please try again.' })
   }
 })
 
