@@ -45,7 +45,7 @@ getFont().catch(() => {})
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    if (!origin || /^http:\/\/localhost(:\d+)?$/.test(origin) || origin === 'https://form-assistant.onrender.com') {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
