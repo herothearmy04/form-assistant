@@ -11,7 +11,7 @@ function TextInput({ field, value, onChange, onSubmit }) {
       value={value}
       onChange={e => onChange(e.target.value)}
       onKeyDown={e => e.key === 'Enter' && onSubmit()}
-      placeholder={field.placeholder ?? `Enter ${field.label}`}
+      placeholder={field.placeholder ?? `${field.label} 입력`}
       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
     />
   )
@@ -38,7 +38,7 @@ function NumberInput({ field, value, onChange, onSubmit }) {
       value={value}
       onChange={e => onChange(e.target.value)}
       onKeyDown={e => e.key === 'Enter' && onSubmit()}
-      placeholder={field.placeholder ?? 'Enter a number'}
+      placeholder={field.placeholder ?? '숫자 입력'}
       className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
     />
   )
@@ -82,7 +82,7 @@ function SignatureInput({ field, value, onChange, onSubmit }) {
         value={value}
         onChange={e => onChange(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && onSubmit()}
-        placeholder={field.placeholder ?? 'e.g., John Smith'}
+        placeholder={field.placeholder ?? '성명을 입력하세요'}
         className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 italic placeholder:text-slate-300 placeholder:not-italic focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
         style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
       />
@@ -91,10 +91,23 @@ function SignatureInput({ field, value, onChange, onSubmit }) {
   )
 }
 
-function SelectInput({ field, value, onChange }) {
+function SelectInput({ field, value, onChange, onSubmit }) {
+  const options = field.options ?? []
+  if (options.length === 0) {
+    return (
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && onSubmit?.()}
+        placeholder={`${field.label} 입력`}
+        className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-300 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all"
+      />
+    )
+  }
   return (
     <div className="grid gap-2.5">
-      {(field.options ?? []).map(opt => (
+      {options.map(opt => (
         <button
           key={opt}
           type="button"
@@ -305,14 +318,12 @@ export default function QASession({ formTitle, fields, file, onComplete, onBack 
             </span>
           </div>
 
-          <p className="mb-6 text-xl font-semibold leading-snug text-slate-800">
-            {field.question}
+          <p className="mb-2 text-xl font-semibold leading-snug text-slate-800">
+            {field.label}
           </p>
 
           {field.description && (
-            <div className="mb-6 rounded-md bg-gray-50 border border-gray-200 p-4">
-              <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{field.description}</p>
-            </div>
+            <p className="mb-6 text-sm text-slate-500 leading-relaxed">{field.description}</p>
           )}
 
           <div className="mb-6">
@@ -320,7 +331,7 @@ export default function QASession({ formTitle, fields, file, onComplete, onBack 
             {field.type === 'date'      && <DateInput      field={field} value={value} onChange={setValue} />}
             {field.type === 'number'    && <NumberInput    field={field} value={value} onChange={setValue} onSubmit={handleNext} />}
             {field.type === 'checkbox'  && <CheckboxInput  value={value} onChange={v => { setValue(v) }} />}
-            {field.type === 'select'    && <SelectInput    field={field} value={value} onChange={v => { setValue(v) }} />}
+            {field.type === 'select'    && <SelectInput    field={field} value={value} onChange={v => { setValue(v) }} onSubmit={handleNext} />}
             {field.type === 'signature' && <SignatureInput field={field} value={value} onChange={setValue} onSubmit={handleNext} />}
           </div>
 

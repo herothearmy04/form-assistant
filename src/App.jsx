@@ -11,7 +11,7 @@ import FillComplete from './components/FillComplete'
 function App() {
   const [file, setFile] = useState(null)
   const [status, setStatus] = useState('idle')
-  const [formData, setFormData] = useState(null)   // { formTitle, fields, acroFieldNames }
+  const [formData, setFormData] = useState(null)   // { formTitle, purpose, categories, signatureOrSeal, importantNotes }
   const [downloadUrl, setDownloadUrl] = useState(null)
   const [finalAnswers, setFinalAnswers] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
@@ -58,6 +58,8 @@ function App() {
     setFinalAnswers(answers)
     setStatus('complete')
   }
+
+  const flatFields = formData?.categories?.flatMap(cat => cat.fields) ?? []
 
   // 헤더는 항상 동일
   const showHero = status === 'idle'
@@ -116,7 +118,11 @@ function App() {
           {status === 'done' && formData && (
             <FieldsPreview
               formTitle={formData.formTitle}
-              fields={formData.fields}
+              purpose={formData.purpose}
+              categories={formData.categories ?? []}
+              signatureOrSeal={formData.signatureOrSeal}
+              importantNotes={formData.importantNotes ?? []}
+              totalFields={flatFields.length}
               onStart={handleStartQA}
               onReset={handleReset}
             />
@@ -125,7 +131,7 @@ function App() {
           {status === 'answering' && formData && (
             <QASession
               formTitle={formData.formTitle}
-              fields={formData.fields}
+              fields={flatFields}
               file={file}
               onComplete={handleFillComplete}
               onBack={() => setStatus('done')}
@@ -136,7 +142,7 @@ function App() {
             <FillComplete
               downloadUrl={downloadUrl}
               answers={finalAnswers}
-              fields={formData.fields}
+              fields={flatFields}
               formTitle={formData.formTitle}
               onReset={handleReset}
             />
