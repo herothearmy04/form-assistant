@@ -4,7 +4,6 @@ import multer from 'multer'
 import cors from 'cors'
 import { PDFDocument, PDFTextField, PDFCheckBox, PDFDropdown, PDFRadioGroup, PDFSignature, StandardFonts, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
-import { PDFParse } from 'pdf-parse'
 import Anthropic from '@anthropic-ai/sdk'
 import { readFile } from 'fs/promises'
 import { fileURLToPath } from 'url'
@@ -151,77 +150,38 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
   }
 
   try {
-    // 1) Extract PDF text
-    const parser = new PDFParse({ data: req.file.buffer, verbosity: 0 })
-    const parsed = await parser.getText()
-    const textContent = parsed.text.slice(0, 10000).trim()
+    // Convert PDF buffer to Base64 for Anthropic native PDF processing
+    const base64Data = req.file.buffer.toString('base64')
 
-    if (!textContent) {
-      return res.status(422).json({ error: 'No text could be extracted from this PDF. Scanned image PDFs are not supported.' })
-    }
-
-    // 2) Extract AcroForm interactive fields (if present)
-    let acroFields = []
-    try {
-      const pdfDoc = await PDFDocument.load(req.file.buffer, { ignoreEncryption: true })
-      const form = pdfDoc.getForm()
-      acroFields = form.getFields().map(f => {
-        let type = 'unknown'
-        if (f instanceof PDFTextField) type = 'text'
-        else if (f instanceof PDFCheckBox) type = 'checkbox'
-        else if (f instanceof PDFDropdown) type = 'dropdown'
-        else if (f instanceof PDFRadioGroup) type = 'radio'
-        else if (f instanceof PDFSignature) type = 'signature'
-        else {
-          // Signature detection by field name as fallback
-          const nameLower = f.getName().toLowerCase()
-          if (/sign|signature|sig$/.test(nameLower)) type = 'signature'
-        }
-
-        const info = { name: f.getName(), type }
-
-        // Include options for radio/dropdown so Claude can create a select field
-        if (f instanceof PDFDropdown || f instanceof PDFRadioGroup) {
-          try { info.options = f.getOptions() } catch {}
-        }
-
-        return info
-      })
-    } catch {
-      // No interactive fields — proceed with text analysis
-    }
-
-    const formatAcroField = (f) => {
-      let line = `- ${f.name} [type: ${f.type}]`
-      if (f.options?.length) line += `, options: ${f.options.slice(0, 8).join(' | ')}`
-      if (f.type === 'signature') line += '  ← MUST include as type "signature"'
-      else if (f.type === 'checkbox' || f.type === 'radio') line += '  ← MUST include as type "checkbox" (Yes/No)'
-      return line
-    }
-
-    const userContent = [
-      `[PDF Source Text]\n${textContent}`,
-      acroFields.length > 0
-        ? `\n\n[Detected Interactive Form Fields: ${acroFields.length}]\n${acroFields.map(formatAcroField).join('\n')}`
-        : '',
-    ].join('')
-
-    // 3) Claude API call — prompt caching + adaptive thinking + streaming
+    // Claude API call — native PDF document block (handles scanned images too)
     const stream = await client.messages.stream({
       model: 'claude-opus-4-8',
       max_tokens: 16000,
-      thinking: { type: 'adaptive' },
+      thinking: { type: 'enabled', budget_tokens: 10000 },
       system: [
         {
           type: 'text',
           text: SYSTEM_PROMPT,
-          cache_control: { type: 'ephemeral' }, // 시스템 프롬프트 캐시
+          cache_control: { type: 'ephemeral' },
         },
       ],
       messages: [
         {
           role: 'user',
-          content: userContent,
+          content: [
+            {
+              type: 'document',
+              source: {
+                type: 'base64',
+                media_type: 'application/pdf',
+                data: base64Data,
+              },
+            },
+            {
+              type: 'text',
+              text: '위 PDF 문서를 분석하여 빈 양식 작성 가이드를 제공해 주세요.',
+            },
+          ],
         },
       ],
     })
@@ -240,8 +200,7 @@ app.post('/api/analyze', upload.single('pdf'), async (req, res) => {
     const { usage } = message
     console.log(`[API] input: ${usage.input_tokens} | cache_read: ${usage.cache_read_input_tokens ?? 0} | cache_write: ${usage.cache_creation_input_tokens ?? 0} | output: ${usage.output_tokens}`)
 
-    // Pass AcroForm field names to frontend (used for mapping in the fill step)
-    res.json({ ...result, acroFieldNames: acroFields.map(f => f.name) })
+    res.json(result)
   } catch (err) {
     console.error('[analyze error]', err)
 
