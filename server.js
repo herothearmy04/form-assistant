@@ -58,11 +58,9 @@ app.use(express.json())
 const SYSTEM_PROMPT = `You are an expert PDF form analyst. You analyze text and form field information extracted from PDF documents to identify all fields the user needs to fill in.
 
 CRITICAL LANGUAGE REQUIREMENT — READ THIS FIRST:
-ALL output text — including formTitle, every label, every question, every placeholder, and every option — MUST be written in ENGLISH ONLY. This rule is absolute and applies regardless of:
-- The language of the source PDF document (Korean, Japanese, Chinese, Spanish, French, etc.)
-- The language of the user's message
-- The content detected in the form
-Do NOT output a single word in any language other than English. If the form is in Korean, translate everything to English. If the form is in any non-English language, translate everything to English. There are NO exceptions.
+The uploaded application form may be in Korean. Please automatically detect the language. If the document is written in Korean, you must extract the requested data and provide the final JSON/text response entirely in natural Korean.
+
+For all other languages (non-Korean), ALL output text — including formTitle, every label, every question, every placeholder, and every option — MUST be written in ENGLISH ONLY. If the form is in a non-English, non-Korean language (Japanese, Chinese, Spanish, French, etc.), translate everything to English. There are NO exceptions to this English-only rule for non-Korean documents.
 
 Return your analysis ONLY as the JSON structure below. Do not include any other text whatsoever:
 
@@ -107,7 +105,7 @@ MANDATORY FIELD INCLUSION RULES — NEVER skip these:
 6. DROPDOWN / SELECT fields → type "select" with options listed
 
 GENERAL RULES:
-- LANGUAGE: Every single string value in the JSON output must be in English only.
+- LANGUAGE: If the source document is in Korean, every string value in the JSON output must be in natural Korean. For all other languages, every string value must be in English only.
 - Include ALL fields that require any form of input (text, checkbox, date, signature, radio, dropdown).
 - NEVER skip a field just because it looks like a legal notice, disclaimer, or consent — if it has a checkbox or input area, include it.
 - Include options only when type is "select".
